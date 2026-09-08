@@ -15,7 +15,10 @@ from ..schemas import Ticket
 
 logger = logging.getLogger(__name__)
 
-SUPPORTED_SUFFIXES = {".json", ".jsonl", ".csv", ".md"}
+SUPPORTED_SUFFIXES = {
+    ".json", ".jsonl", ".csv", ".md", ".pdf", ".docx", ".doc",
+    ".txt", ".py", ".html", ".xml", ".log", ".rst", ".yaml", ".yml", ".tsv"
+}
 
 # Documentation and dotfiles living alongside the data are not tickets.
 IGNORED_STEMS = {"readme", "index", "notes"}
@@ -73,16 +76,18 @@ def load_tickets(documents_dir: Path) -> tuple[list[Ticket], int]:
 
 
 def _is_ticket_file(path: Path) -> bool:
-    """Whether a path holds ticket data.
+    """Whether a path holds ticket or document data.
 
-    Skips dotfiles and docs like `README.md` that sit next to the data — otherwise
-    the Markdown loader happily indexes the directory's own README as a ticket.
+    Skips dotfiles and hidden directories.
     """
-    if not path.is_file() or path.suffix.lower() not in SUPPORTED_SUFFIXES:
+    if not path.is_file():
         return False
     if path.name.startswith((".", "_")):
         return False
-    return path.stem.lower() not in IGNORED_STEMS
+    suffix = path.suffix.lower()
+    if suffix in SUPPORTED_SUFFIXES or not suffix:
+        return True
+    return False
 
 
 def _read_file(path: Path) -> Iterator[dict[str, Any]]:
@@ -90,16 +95,27 @@ def _read_file(path: Path) -> Iterator[dict[str, Any]]:
     try:
         if suffix == ".json":
             payload = json.loads(path.read_text(encoding="utf-8", errors="ignore"))
-            # Accept either a bare list or {"tickets": [...]}.
             records = payload.get("tickets", []) if isinstance(payload, dict) else payload
-            yield from (r for r in records if isinstance(r, dict))
+            if isinstance(records, dict):
+                records = [records]
+            if isinstance(records, list):
+                yield from (r for r in records if isinstance(r, dict))
+            else:
+                yield {
+                    "id": f"UP-{path.stem}",
+                    "subject": path.stem.replace("-", " ").replace("_", " ").title(),
+                    "body": json.dumps(payload, indent=2),
+                    "source_file": path.name,
+                }
         elif suffix == ".jsonl":
             for line_no, line in enumerate(path.read_text(encoding="utf-8", errors="ignore").splitlines(), 1):
                 line = line.strip()
                 if not line:
                     continue
                 try:
-                    yield json.loads(line)
+                    data = json.loads(line)
+                    if isinstance(data, dict):
+                        yield data
                 except json.JSONDecodeError as exc:
                     logger.warning("%s:%d — bad JSON line: %s", path.name, line_no, exc)
         elif suffix == ".csv":
@@ -131,7 +147,7 @@ def _read_pdf(path: Path) -> dict[str, Any]:
         }
     except Exception as exc:
         logger.error("Could not read PDF %s: %s", path, exc)
-        return {"id": f"UP-{path.stem}", "subject": path.stem, "body": f"PDF document {path.name}"}
+        return {"id": f"UP-{path.stem}", "subject": path.stem, "body": f"PDF document {path.name}", "source_file": path.name}
 
 
 def _read_docx(path: Path) -> dict[str, Any]:
@@ -148,7 +164,7 @@ def _read_docx(path: Path) -> dict[str, Any]:
         }
     except Exception as exc:
         logger.error("Could not read DOCX %s: %s", path, exc)
-        return {"id": f"UP-{path.stem}", "subject": path.stem, "body": f"DOCX document {path.name}"}
+        return {"id": f"UP-{path.stem}", "subject": path.stem, "body": f"DOCX document {path.name}", "source_file": path.name}
 
 
 def _read_txt(path: Path) -> dict[str, Any]:
@@ -163,13 +179,13 @@ def _read_txt(path: Path) -> dict[str, Any]:
         }
     except Exception as exc:
         logger.error("Could not read text file %s: %s", path, exc)
-        return {"id": f"UP-{path.stem}", "subject": path.stem, "body": f"Text document {path.name}"}
+        return {"id": f"UP-{path.stem}", "subject": path.stem, "body": f"Text document {path.name}", "source_file": path.name}
 
 
 def _parse_markdown(path: Path) -> dict[str, Any]:
-    """Treat a Markdown file as one ticket: `# Subject` then body, `key: value` front matter."""
-    text = path.read_text(encoding="utf-8")
-    record: dict[str, Any] = {"id": path.stem}
+    """Treat a Markdown file as one ticket/article: `# Subject` then body, `key: value` front matter."""
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    record: dict[str, Any] = {"id": path.stem, "source_file": path.name}
 
     if match := re.match(r"^---\n(.*?)\n---\n", text, re.DOTALL):
         for line in match.group(1).splitlines():
@@ -184,6 +200,8 @@ def _parse_markdown(path: Path) -> dict[str, Any]:
 
     record.setdefault("subject", path.stem.replace("-", " ").replace("_", " ").title())
     record["body"] = text.strip()
+    if "article_id" in record:
+        record["id"] = record["article_id"]
     return record
 
 
@@ -204,13 +222,16 @@ def _coerce(raw: dict[str, Any], source: Path) -> Ticket | None:
             normalised[enum_field] = normalised[enum_field].strip().lower()
 
     if not normalised.get("id"):
-        logger.warning("record in %s has no id — skipping", source.name)
-        return None
+        normalised["id"] = normalised.get("article_id") or f"UP-{source.stem}"
 
     normalised["id"] = str(normalised["id"])
+    normalised.setdefault("subject", source.stem.replace("-", " ").replace("_", " ").title())
+    normalised.setdefault("body", f"Document {source.name}")
+    normalised.setdefault("source_file", source.name)
 
     try:
         return Ticket(**normalised)
     except ValidationError as exc:
         logger.warning("ticket %s in %s failed validation: %s", normalised["id"], source.name, exc)
         return None
+

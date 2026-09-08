@@ -83,6 +83,14 @@ def _ticket_metadata(ticket: Any, index: int, total: int) -> dict[str, Any]:
         meta["created_at"] = ticket.created_at.isoformat()
     if ticket.tags:
         meta["tags"] = ", ".join(ticket.tags)
+    if getattr(ticket, "source_file", None):
+        meta["source_file"] = ticket.source_file
+    if getattr(ticket, "article_id", None):
+        meta["article_id"] = ticket.article_id
+    if getattr(ticket, "product_area", None):
+        meta["product_area"] = ticket.product_area
+    if getattr(ticket, "last_updated", None):
+        meta["last_updated"] = str(ticket.last_updated)
     return meta
 
 

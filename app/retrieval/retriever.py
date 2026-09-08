@@ -24,6 +24,7 @@ from .vector_store import VectorStore
 
 logger = logging.getLogger(__name__)
 
+import math
 import re
 from rank_bm25 import BM25Okapi
 
@@ -65,6 +66,24 @@ class Retriever:
                 logger.warning("Could not load sentence_transformers CrossEncoder: %s", exc)
         return self._cross_encoder
 
+    def similar_to_ticket(
+        self, subject: str, body: str, top_k: int = 4, resolved_only: bool = True
+    ) -> list[RetrievedChunk]:
+        """Find past tickets like this one — backs triage and reply drafting."""
+        where: dict[str, Any] | None = {"has_resolution": True} if resolved_only else None
+        hits = self.store.query(f"{subject}\n\n{body}", top_k=top_k * OVERFETCH_FACTOR, where=where)
+
+        seen: set[str] = set()
+        out: list[RetrievedChunk] = []
+        for chunk in (_to_chunk(hit) for hit in hits):
+            if chunk.ticket_id in seen:
+                continue
+            seen.add(chunk.ticket_id)
+            out.append(chunk)
+            if len(out) >= top_k:
+                break
+        return out
+
     def retrieve(
         self,
         query: str,
@@ -85,7 +104,9 @@ class Retriever:
                 return []
             chunks = [_to_chunk(hit) for hit in hits]
             if self.min_relevance > 0.0:
-                chunks = [c for c in chunks if c.score >= self.min_relevance]
+                filtered = [c for c in chunks if c.score >= self.min_relevance]
+                if filtered:
+                    chunks = filtered
             return _deduplicate(chunks, max_per_source, limit)
 
         # ------------------------------------------------ cross-encoder rerank
@@ -102,7 +123,9 @@ class Retriever:
                     pairs = [(query, c.text) for c in dense_chunks]
                     scores = cross_enc.predict(pairs)
                     for chunk, score in zip(dense_chunks, scores):
-                        chunk.score = round(float(score), 4)
+                        # Convert logit score to 0..1 via sigmoid
+                        sig = 1.0 / (1.0 + math.exp(-float(score)))
+                        chunk.score = round(sig, 4)
                     dense_chunks.sort(key=lambda c: c.score, reverse=True)
                 except Exception as exc:
                     logger.warning("CrossEncoder prediction error: %s", exc)
@@ -111,8 +134,13 @@ class Retriever:
                 for chunk in dense_chunks:
                     c_tokens = set(_tokenize(chunk.text))
                     overlap = len(q_tokens.intersection(c_tokens))
-                    chunk.score = round(chunk.score + (overlap * 0.05), 4)
+                    chunk.score = round(min(1.0, chunk.score + (overlap * 0.05)), 4)
                 dense_chunks.sort(key=lambda c: c.score, reverse=True)
+
+            if self.min_relevance > 0.0:
+                filtered = [c for c in dense_chunks if c.score >= self.min_relevance]
+                if filtered:
+                    dense_chunks = filtered
 
             return _deduplicate(dense_chunks, max_per_source, limit)
 
@@ -157,14 +185,20 @@ class Retriever:
 
         fused_cids = sorted(rrf_scores.keys(), key=lambda cid: rrf_scores[cid], reverse=True)
 
+        # Max possible single-pass top hit score (rank 1 in both dense & BM25) = 2 / 61 = 0.032786
+        max_possible_rrf = 2.0 / (rrf_k + 1.0)
+
         chunks = []
         for cid in fused_cids:
             chunk = chunk_map[cid]
-            chunk.score = round(rrf_scores[cid], 6)
+            norm_score = min(1.0, max(0.0, rrf_scores[cid] / max_possible_rrf))
+            chunk.score = round(norm_score, 4)
             chunks.append(chunk)
 
         if self.min_relevance > 0.0:
-            chunks = [c for c in chunks if c.score >= self.min_relevance]
+            filtered = [c for c in chunks if c.score >= self.min_relevance]
+            if filtered:
+                chunks = filtered
 
         return _deduplicate(chunks, max_per_source, limit)
 
@@ -183,23 +217,6 @@ def _deduplicate(chunks: list[RetrievedChunk], max_per_source: int, limit: int) 
             break
     return selected
 
-    def similar_to_ticket(
-        self, subject: str, body: str, top_k: int = 4, resolved_only: bool = True
-    ) -> list[RetrievedChunk]:
-        """Find past tickets like this one — backs triage and reply drafting."""
-        where: dict[str, Any] | None = {"has_resolution": True} if resolved_only else None
-        hits = self.store.query(f"{subject}\n\n{body}", top_k=top_k * OVERFETCH_FACTOR, where=where)
-
-        seen: set[str] = set()
-        out: list[RetrievedChunk] = []
-        for chunk in (_to_chunk(hit) for hit in hits):
-            if chunk.ticket_id in seen:
-                continue
-            seen.add(chunk.ticket_id)
-            out.append(chunk)
-            if len(out) >= top_k:
-                break
-        return out
 
 
 def _build_where(

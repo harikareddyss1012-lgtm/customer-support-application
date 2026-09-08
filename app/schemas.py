@@ -63,6 +63,10 @@ class Ticket(BaseModel):
     resolution: str | None = None
     created_at: datetime | None = None
     tags: list[str] = Field(default_factory=list)
+    source_file: str | None = None
+    article_id: str | None = None
+    product_area: str | None = None
+    last_updated: str | None = None
 
 
 class TicketFilters(BaseModel):
