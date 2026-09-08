@@ -98,7 +98,7 @@ Zero code fixes were applied during this evaluation step.
 ## 4. Dated Falsifiable Prediction
 
 - **Date**: `2026-09-08`
-- **Git Commit Hash**: `PENDING_COMMIT`
+- **Git Commit Hash**: `598bc24efd888a33ea8e9e4f15b4829bfcd4673b`
 - **Target Failure Mode**: `quotes-superseded-refund-window` (Currently **30.0%** / 6 of 20 traces)
 - **Specific Change**: Implement metadata-based effective-date filtering (`effective_date >= 2026-01-01`) on vector store retrieval queries to filter out legacy pre-UBP document chunks.
 - **Expected Quantitative Delta**: The frequency of the `quotes-superseded-refund-window` mode will drop from **30.0%** (6/20 traces) to **under 5.0%** (<1/20 traces) on a fresh seeded random sample.
