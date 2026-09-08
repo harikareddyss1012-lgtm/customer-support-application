@@ -31,6 +31,12 @@ class Settings(BaseSettings):
     claude_effort: Literal["low", "medium", "high", "xhigh", "max"] = "medium"
     claude_max_tokens: int = 16_000
 
+    # --- Langfuse ---
+    langfuse_public_key: str | None = None
+    langfuse_secret_key: str | None = None
+    langfuse_host: str = "https://cloud.langfuse.com"
+
+
     # --- Retrieval ---
     chroma_path: Path = BACKEND_ROOT / "chroma_db"
     collection_name: str = "support_tickets"

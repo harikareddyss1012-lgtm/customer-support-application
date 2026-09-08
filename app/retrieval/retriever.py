@@ -12,6 +12,8 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from langfuse import observe
+
 from ..schemas import (
     ArticleFilters,
     Category,
@@ -23,6 +25,7 @@ from ..schemas import (
 from .vector_store import VectorStore
 
 logger = logging.getLogger(__name__)
+
 
 import math
 import re
@@ -84,6 +87,7 @@ class Retriever:
                 break
         return out
 
+    @observe(name="retrieve", as_type="retriever")
     def retrieve(
         self,
         query: str,
@@ -93,6 +97,7 @@ class Retriever:
         max_per_source: int = 2,
         strategy: str = "hybrid",
     ) -> list[RetrievedChunk]:
+
         """Retrieve using `dense`, `hybrid` (BM25+RRF), or `rerank` (Cross-Encoder)."""
         limit = top_k or self.top_k
         where = _build_where(filters, article_filters)

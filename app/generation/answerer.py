@@ -13,7 +13,9 @@ import logging
 from typing import Any, Iterator, Literal
 
 import anthropic
+from langfuse import observe
 from pydantic import ValidationError
+
 
 from ..config import get_settings
 from ..retrieval.retriever import Retriever, format_context
@@ -132,6 +134,7 @@ class Answerer:
         return resolve_provider()
 
     # ------------------------------------------------------------------ chat
+    @observe(name="answer")
     def answer(
         self,
         question: str,
@@ -140,6 +143,7 @@ class Answerer:
         top_k: int | None = None,
         strategy: str = "hybrid",
     ) -> ChatResponse:
+
         """Answer a question over the ticket archive, with citations."""
         chunks = self.retriever.retrieve(question, top_k=top_k, filters=filters, strategy=strategy)
         provider = self._provider()
@@ -275,6 +279,7 @@ class Answerer:
         return messages
 
     # ---------------------------------------------------------------- triage
+    @observe(name="triage")
     def triage(self, subject: str, body: str) -> TriageResponse:
         similar = self.retriever.similar_to_ticket(subject, body, top_k=4)
         provider = self._provider()
@@ -328,7 +333,9 @@ class Answerer:
         )
 
     # ----------------------------------------------------------------- draft
+    @observe(name="draft_reply")
     def draft_reply(self, subject: str, body: str, tone: str = "friendly") -> DraftReplyResponse:
+
         similar = self.retriever.similar_to_ticket(subject, body, top_k=4)
         tone_instruction = prompts.TONE_INSTRUCTIONS.get(
             tone, prompts.TONE_INSTRUCTIONS["friendly"]
