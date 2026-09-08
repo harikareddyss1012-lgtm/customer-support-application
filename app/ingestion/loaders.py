@@ -89,12 +89,12 @@ def _read_file(path: Path) -> Iterator[dict[str, Any]]:
     suffix = path.suffix.lower()
     try:
         if suffix == ".json":
-            payload = json.loads(path.read_text(encoding="utf-8"))
+            payload = json.loads(path.read_text(encoding="utf-8", errors="ignore"))
             # Accept either a bare list or {"tickets": [...]}.
             records = payload.get("tickets", []) if isinstance(payload, dict) else payload
             yield from (r for r in records if isinstance(r, dict))
         elif suffix == ".jsonl":
-            for line_no, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            for line_no, line in enumerate(path.read_text(encoding="utf-8", errors="ignore").splitlines(), 1):
                 line = line.strip()
                 if not line:
                     continue
@@ -103,12 +103,67 @@ def _read_file(path: Path) -> Iterator[dict[str, Any]]:
                 except json.JSONDecodeError as exc:
                     logger.warning("%s:%d — bad JSON line: %s", path.name, line_no, exc)
         elif suffix == ".csv":
-            with path.open(newline="", encoding="utf-8") as fh:
+            with path.open(newline="", encoding="utf-8", errors="ignore") as fh:
                 yield from csv.DictReader(fh)
         elif suffix == ".md":
             yield _parse_markdown(path)
-    except (OSError, json.JSONDecodeError) as exc:
+        elif suffix == ".pdf":
+            yield _read_pdf(path)
+        elif suffix in (".docx", ".doc"):
+            yield _read_docx(path)
+        else:
+            yield _read_txt(path)
+    except Exception as exc:
         logger.error("could not read %s: %s", path, exc)
+
+
+def _read_pdf(path: Path) -> dict[str, Any]:
+    try:
+        import pypdf
+        reader = pypdf.PdfReader(str(path))
+        text = "\n\n".join([page.extract_text() or "" for page in reader.pages])
+        return {
+            "id": f"UP-{path.stem}",
+            "subject": path.stem.replace("-", " ").replace("_", " ").title(),
+            "body": text.strip() or f"Document {path.name}",
+            "source_file": path.name,
+            "article_id": f"UP-{path.stem}",
+        }
+    except Exception as exc:
+        logger.error("Could not read PDF %s: %s", path, exc)
+        return {"id": f"UP-{path.stem}", "subject": path.stem, "body": f"PDF document {path.name}"}
+
+
+def _read_docx(path: Path) -> dict[str, Any]:
+    try:
+        import docx
+        doc = docx.Document(str(path))
+        text = "\n\n".join([p.text for p in doc.paragraphs if p.text])
+        return {
+            "id": f"UP-{path.stem}",
+            "subject": path.stem.replace("-", " ").replace("_", " ").title(),
+            "body": text.strip() or f"Document {path.name}",
+            "source_file": path.name,
+            "article_id": f"UP-{path.stem}",
+        }
+    except Exception as exc:
+        logger.error("Could not read DOCX %s: %s", path, exc)
+        return {"id": f"UP-{path.stem}", "subject": path.stem, "body": f"DOCX document {path.name}"}
+
+
+def _read_txt(path: Path) -> dict[str, Any]:
+    try:
+        text = path.read_text(encoding="utf-8", errors="ignore")
+        return {
+            "id": f"UP-{path.stem}",
+            "subject": path.stem.replace("-", " ").replace("_", " ").title(),
+            "body": text.strip() or f"Document {path.name}",
+            "source_file": path.name,
+            "article_id": f"UP-{path.stem}",
+        }
+    except Exception as exc:
+        logger.error("Could not read text file %s: %s", path, exc)
+        return {"id": f"UP-{path.stem}", "subject": path.stem, "body": f"Text document {path.name}"}
 
 
 def _parse_markdown(path: Path) -> dict[str, Any]:

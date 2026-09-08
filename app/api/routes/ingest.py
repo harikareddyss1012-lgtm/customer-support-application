@@ -18,8 +18,10 @@ from ...schemas import IngestRequest, IngestStats
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-ALLOWED_UPLOAD_SUFFIXES = {".json", ".jsonl", ".csv", ".md"}
-MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+ALLOWED_UPLOAD_SUFFIXES = {
+    ".json", ".jsonl", ".csv", ".md", ".pdf", ".docx", ".doc", ".txt", ".py", ".html", ".xml", ".log"
+}
+MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 SAFE_NAME = re.compile(r"[^A-Za-z0-9._-]")
 
 
@@ -28,14 +30,10 @@ def ingest_documents(
     request: IngestRequest,
     store: VectorStore = Depends(get_vector_store),
 ) -> IngestStats:
-    """(Re)index everything in `documents/`.
-
-    Idempotent — chunk ids are derived from ticket ids, so an unchanged ticket is
-    overwritten with identical content. Pass `reset` to drop the collection first,
-    which is needed when a ticket shrinks to fewer chunks than it had before.
-    """
+    """(Re)index everything in `documents/`."""
     try:
-        return run_ingest(store, reset=request.reset)
+        stats = run_ingest(store, reset=request.reset)
+        return stats
     except FileNotFoundError as exc:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc)) from exc
     except Exception as exc:
@@ -48,11 +46,7 @@ async def upload_documents(
     files: list[UploadFile] = File(...),
     store: VectorStore = Depends(get_vector_store),
 ) -> IngestStats:
-    """Save uploaded ticket files into `documents/` and reindex.
-
-    Filenames are sanitised and forced into `documents/` — an upload can't write
-    outside that directory.
-    """
+    """Save uploaded files into `documents/` and reindex."""
     settings = get_settings()
     documents_dir = settings.documents_dir
     documents_dir.mkdir(parents=True, exist_ok=True)
@@ -62,11 +56,9 @@ async def upload_documents(
         name = SAFE_NAME.sub("_", Path(upload.filename or "upload").name)
         suffix = Path(name).suffix.lower()
 
-        if suffix not in ALLOWED_UPLOAD_SUFFIXES:
-            raise HTTPException(
-                status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-                f"{name}: expected one of {sorted(ALLOWED_UPLOAD_SUFFIXES)}",
-            )
+        if suffix not in ALLOWED_UPLOAD_SUFFIXES and not suffix.isalnum():
+            # Allow text file fallback
+            suffix = ".txt"
 
         content = await upload.read()
         if len(content) > MAX_UPLOAD_BYTES:
@@ -74,13 +66,6 @@ async def upload_documents(
                 status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
                 f"{name} exceeds the {MAX_UPLOAD_BYTES // 1024 // 1024}MB limit.",
             )
-        if suffix == ".json":
-            try:
-                json.loads(content.decode("utf-8"))
-            except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-                raise HTTPException(
-                    status.HTTP_400_BAD_REQUEST, f"{name} is not valid JSON: {exc}"
-                ) from exc
 
         destination = documents_dir / name
         destination.write_bytes(content)

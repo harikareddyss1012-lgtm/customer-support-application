@@ -1,0 +1,368 @@
+{
+  "hit_rate": 0.5,
+  "hits": 6,
+  "total": 12,
+  "p50_latency_ms": 165.61579999688547,
+  "results": [
+    {
+      "id": 1,
+      "question": "What does error code ERR-4032 mean and what is the fix?",
+      "expected_chunk_id": "BM-002::p3",
+      "token_match": "ERR-4032",
+      "retrieved_chunk_ids": [
+        "BM-006-enterprise-custom-plans::p2",
+        "BM-006::p2",
+        "BM-002-error-codes::p4"
+      ],
+      "hit": false,
+      "latency_ms": 234.9677000020165,
+      "retrieved_chunks": [
+        {
+          "chunk_id": "BM-006-enterprise-custom-plans::p2",
+          "score": 0.030777,
+          "text_snippet": "Ticket BM-006-enterprise-custom-plans \u2014 Enterprise Subscription Migration \u2014 Custom Plans and Contracts\n\nore the migration date, the account will encou"
+        },
+        {
+          "chunk_id": "BM-006::p2",
+          "score": 0.03031,
+          "text_snippet": "Article BM-006 \u2014 Enterprise Subscription Migration \u2014 Custom Plans and Contracts\n\nore the migration date, the account will encounter `ERR-4032` when th"
+        },
+        {
+          "chunk_id": "BM-002-error-codes::p4",
+          "score": 0.028778,
+          "text_snippet": "Ticket BM-002-error-codes \u2014 Billing Migration Error Codes \u2014 Reference Guide\n\nin the `migration_status` column alongside the timestamp.\n4. Use the Fix "
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "question": "What steps fix ERR-4031 after SSO mapping breaks?",
+      "expected_chunk_id": "BM-005::p2",
+      "token_match": "ERR-4031",
+      "retrieved_chunk_ids": [
+        "BM-005::p1",
+        "BM-005-account-sso-access::p1",
+        "BM-005-account-sso-access::p2"
+      ],
+      "hit": false,
+      "latency_ms": 171.49690000223927,
+      "retrieved_chunks": [
+        {
+          "chunk_id": "BM-005::p1",
+          "score": 0.032787,
+          "text_snippet": "Article BM-005 \u2014 Account Access and SSO During Billing Migration\n\ncy portal.\n\n## SSO Mapping After Migration\n\nEnterprise accounts using SSO may experi"
+        },
+        {
+          "chunk_id": "BM-005-account-sso-access::p1",
+          "score": 0.032258,
+          "text_snippet": "Ticket BM-005-account-sso-access \u2014 Account Access and SSO During Billing Migration\n\ncy portal.\n\n## SSO Mapping After Migration\n\nEnterprise accounts us"
+        },
+        {
+          "chunk_id": "BM-005-account-sso-access::p2",
+          "score": 0.030777,
+          "text_snippet": "Ticket BM-005-account-sso-access \u2014 Account Access and SSO During Billing Migration\n\nesent in the SAML assertion, the user authenticates but has no bil"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "question": "What error code is generated when a signature verification fails on a webhook endpoint after migration?",
+      "expected_chunk_id": "BM-004::p3",
+      "token_match": "ERR-4040",
+      "retrieved_chunk_ids": [
+        "BM-004-webhook-api-changes::p2",
+        "BM-004-webhook-api-changes::p3",
+        "BM-004::p3"
+      ],
+      "hit": true,
+      "latency_ms": 170.3962000028696,
+      "retrieved_chunks": [
+        {
+          "chunk_id": "BM-004-webhook-api-changes::p2",
+          "score": 0.032522,
+          "text_snippet": "Ticket BM-004-webhook-api-changes \u2014 Developer Guide \u2014 Webhook and API Changes During Billing Migration\n\nnteger) + `amount_display` (string with curren"
+        },
+        {
+          "chunk_id": "BM-004-webhook-api-changes::p3",
+          "score": 0.031754,
+          "text_snippet": "Ticket BM-004-webhook-api-changes \u2014 Developer Guide \u2014 Webhook and API Changes During Billing Migration\n\nIf your endpoint fails signature verification "
+        },
+        {
+          "chunk_id": "BM-004::p3",
+          "score": 0.031746,
+          "text_snippet": "Article BM-004 \u2014 Developer Guide \u2014 Webhook and API Changes During Billing Migration\n\nIf your endpoint fails signature verification after migration, yo"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "question": "What happens when an account gets locked during data transfer with code ERR-4030?",
+      "expected_chunk_id": "BM-005::p3",
+      "token_match": "ERR-4030",
+      "retrieved_chunk_ids": [
+        "BM-005::p2",
+        "BM-005-account-sso-access::p3",
+        "BM-005::p3"
+      ],
+      "hit": true,
+      "latency_ms": 156.13290001056157,
+      "retrieved_chunks": [
+        {
+          "chunk_id": "BM-005::p2",
+          "score": 0.032266,
+          "text_snippet": "Article BM-005 \u2014 Account Access and SSO During Billing Migration\n\nesent in the SAML assertion, the user authenticates but has no billing permissions. "
+        },
+        {
+          "chunk_id": "BM-005-account-sso-access::p3",
+          "score": 0.032018,
+          "text_snippet": "Ticket BM-005-account-sso-access \u2014 Account Access and SSO During Billing Migration\n\nnd their session in a locked state afterwards. This is because the"
+        },
+        {
+          "chunk_id": "BM-005::p3",
+          "score": 0.032002,
+          "text_snippet": "Article BM-005 \u2014 Account Access and SSO During Billing Migration\n\nnd their session in a locked state afterwards. This is because the migration tool ac"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "question": "How long do migration credits last and what happens when they expire?",
+      "expected_chunk_id": "BM-003::p2",
+      "token_match": "MIGRATION_CREDIT",
+      "retrieved_chunk_ids": [
+        "BM-003-invoice-credit-migration::p2",
+        "BM-003::p2",
+        "BM-001::p2"
+      ],
+      "hit": true,
+      "latency_ms": 160.63140000915155,
+      "retrieved_chunks": [
+        {
+          "chunk_id": "BM-003-invoice-credit-migration::p2",
+          "score": 0.032522,
+          "text_snippet": "Ticket BM-003-invoice-credit-migration \u2014 Invoice and Credit Migration \u2014 How Your Balance Transfers\n\nitem on their first UBP invoice. The credit is cal"
+        },
+        {
+          "chunk_id": "BM-003::p2",
+          "score": 0.032522,
+          "text_snippet": "Article BM-003 \u2014 Invoice and Credit Migration \u2014 How Your Balance Transfers\n\nitem on their first UBP invoice. The credit is calculated as follows:\n\n```"
+        },
+        {
+          "chunk_id": "BM-001::p2",
+          "score": 0.031258,
+          "text_snippet": "Article BM-001 \u2014 Billing Migration Overview \u2014 What Changes and When\n\nact accounts | Sign addendum |\n| Phase 4 \u2014 Legacy Free | 2026-02-01 | Remaining f"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "question": "What is the new invoice numbering format in the Unified Billing Platform?",
+      "expected_chunk_id": "BM-001::p2",
+      "token_match": "UBP-YYYY-NNNNNN",
+      "retrieved_chunk_ids": [
+        "BM-003::p0",
+        "BM-001::p0",
+        "BM-003-invoice-credit-migration::p0"
+      ],
+      "hit": false,
+      "latency_ms": 166.06419999152422,
+      "retrieved_chunks": [
+        {
+          "chunk_id": "BM-003::p0",
+          "score": 0.032266,
+          "text_snippet": "Article BM-003 \u2014 Invoice and Credit Migration \u2014 How Your Balance Transfers\n\nThis article explains how outstanding invoices, prorated credits, and acco"
+        },
+        {
+          "chunk_id": "BM-001::p0",
+          "score": 0.032018,
+          "text_snippet": "Article BM-001 \u2014 Billing Migration Overview \u2014 What Changes and When\n\nStarting 1 December 2025, all accounts will be migrated from the Legacy Billing E"
+        },
+        {
+          "chunk_id": "BM-003-invoice-credit-migration::p0",
+          "score": 0.031754,
+          "text_snippet": "Ticket BM-003-invoice-credit-migration \u2014 Invoice and Credit Migration \u2014 How Your Balance Transfers\n\nThis article explains how outstanding invoices, pr"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "question": "What authentication header replaces X-Billing-Token for API calls?",
+      "expected_chunk_id": "BM-004::p2",
+      "token_match": "X-Billing-Token",
+      "retrieved_chunk_ids": [
+        "BM-004::p3",
+        "BM-004-webhook-api-changes::p3",
+        "BM-004::p2"
+      ],
+      "hit": true,
+      "latency_ms": 174.89880000357516,
+      "retrieved_chunks": [
+        {
+          "chunk_id": "BM-004::p3",
+          "score": 0.032266,
+          "text_snippet": "Article BM-004 \u2014 Developer Guide \u2014 Webhook and API Changes During Billing Migration\n\nIf your endpoint fails signature verification after migration, yo"
+        },
+        {
+          "chunk_id": "BM-004-webhook-api-changes::p3",
+          "score": 0.031754,
+          "text_snippet": "Ticket BM-004-webhook-api-changes \u2014 Developer Guide \u2014 Webhook and API Changes During Billing Migration\n\nIf your endpoint fails signature verification "
+        },
+        {
+          "chunk_id": "BM-004::p2",
+          "score": 0.031545,
+          "text_snippet": "Article BM-004 \u2014 Developer Guide \u2014 Webhook and API Changes During Billing Migration\n\nnteger) + `amount_display` (string with currency symbol) | Update"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "question": "What permissions does the billing_admin SAML role have?",
+      "expected_chunk_id": "BM-005::p4",
+      "token_match": "billing_admin",
+      "retrieved_chunk_ids": [
+        "BM-005::p1",
+        "BM-005-account-sso-access::p1",
+        "BM-005-account-sso-access::p2"
+      ],
+      "hit": false,
+      "latency_ms": 170.50100001506507,
+      "retrieved_chunks": [
+        {
+          "chunk_id": "BM-005::p1",
+          "score": 0.031778,
+          "text_snippet": "Article BM-005 \u2014 Account Access and SSO During Billing Migration\n\ncy portal.\n\n## SSO Mapping After Migration\n\nEnterprise accounts using SSO may experi"
+        },
+        {
+          "chunk_id": "BM-005-account-sso-access::p1",
+          "score": 0.031754,
+          "text_snippet": "Ticket BM-005-account-sso-access \u2014 Account Access and SSO During Billing Migration\n\ncy portal.\n\n## SSO Mapping After Migration\n\nEnterprise accounts us"
+        },
+        {
+          "chunk_id": "BM-005-account-sso-access::p2",
+          "score": 0.031545,
+          "text_snippet": "Ticket BM-005-account-sso-access \u2014 Account Access and SSO During Billing Migration\n\nesent in the SAML assertion, the user authenticates but has no bil"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "question": "When is the cutover date for Phase 3 Enterprise accounts?",
+      "expected_chunk_id": "BM-001::p1",
+      "token_match": "Phase 3",
+      "retrieved_chunk_ids": [
+        "BM-006::p3",
+        "BM-001::p1",
+        "BM-006-enterprise-custom-plans::p3"
+      ],
+      "hit": true,
+      "latency_ms": 165.16740000224672,
+      "retrieved_chunks": [
+        {
+          "chunk_id": "BM-006::p3",
+          "score": 0.032266,
+          "text_snippet": "Article BM-006 \u2014 Enterprise Subscription Migration \u2014 Custom Plans and Contracts\n\ngrate and select the UBP plan as the target |\n| e | Confirm migration"
+        },
+        {
+          "chunk_id": "BM-001::p1",
+          "score": 0.032266,
+          "text_snippet": "Article BM-001 \u2014 Billing Migration Overview \u2014 What Changes and When\n\nrs, or real-time spend alerts. The Unified Billing Platform replaces all of that "
+        },
+        {
+          "chunk_id": "BM-006-enterprise-custom-plans::p3",
+          "score": 0.031754,
+          "text_snippet": "Ticket BM-006-enterprise-custom-plans \u2014 Enterprise Subscription Migration \u2014 Custom Plans and Contracts\n\ngrate and select the UBP plan as the target |\n"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "question": "What formula is used to calculate MIGRATION_CREDIT on the first UBP invoice?",
+      "expected_chunk_id": "BM-003::p2",
+      "token_match": "LBE_credit_balance",
+      "retrieved_chunk_ids": [
+        "BM-003::p2",
+        "BM-003::p1",
+        "BM-001::p2"
+      ],
+      "hit": true,
+      "latency_ms": 160.24129997822456,
+      "retrieved_chunks": [
+        {
+          "chunk_id": "BM-003::p2",
+          "score": 0.032002,
+          "text_snippet": "Article BM-003 \u2014 Invoice and Credit Migration \u2014 How Your Balance Transfers\n\nitem on their first UBP invoice. The credit is calculated as follows:\n\n```"
+        },
+        {
+          "chunk_id": "BM-003::p1",
+          "score": 0.031778,
+          "text_snippet": "Article BM-003 \u2014 Invoice and Credit Migration \u2014 How Your Balance Transfers\n\nices Are Handled\n\nAny invoice with status `OPEN` or `OVERDUE` at migration"
+        },
+        {
+          "chunk_id": "BM-001::p2",
+          "score": 0.031319,
+          "text_snippet": "Article BM-001 \u2014 Billing Migration Overview \u2014 What Changes and When\n\nact accounts | Sign addendum |\n| Phase 4 \u2014 Legacy Free | 2026-02-01 | Remaining f"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "question": "What is the rate limit for the API token endpoint per client ID?",
+      "expected_chunk_id": "BM-004::p4",
+      "token_match": "rate-limits",
+      "retrieved_chunk_ids": [
+        "BM-004-webhook-api-changes::p3",
+        "BM-004-webhook-api-changes::p4",
+        "BM-004::p3"
+      ],
+      "hit": false,
+      "latency_ms": 159.6651000145357,
+      "retrieved_chunks": [
+        {
+          "chunk_id": "BM-004-webhook-api-changes::p3",
+          "score": 0.032018,
+          "text_snippet": "Ticket BM-004-webhook-api-changes \u2014 Developer Guide \u2014 Webhook and API Changes During Billing Migration\n\nIf your endpoint fails signature verification "
+        },
+        {
+          "chunk_id": "BM-004-webhook-api-changes::p4",
+          "score": 0.032018,
+          "text_snippet": "Ticket BM-004-webhook-api-changes \u2014 Developer Guide \u2014 Webhook and API Changes During Billing Migration\n\n) and `expires_in`. Rotate tokens proactively "
+        },
+        {
+          "chunk_id": "BM-004::p3",
+          "score": 0.032002,
+          "text_snippet": "Article BM-004 \u2014 Developer Guide \u2014 Webhook and API Changes During Billing Migration\n\nIf your endpoint fails signature verification after migration, yo"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "question": "What happens if a custom plan migration addendum is not signed 7 days before the migration date?",
+      "expected_chunk_id": "BM-006::p4",
+      "token_match": "addendum",
+      "retrieved_chunk_ids": [
+        "BM-006-enterprise-custom-plans::p3",
+        "BM-006::p3",
+        "BM-006::p1"
+      ],
+      "hit": false,
+      "latency_ms": 156.85539998230524,
+      "retrieved_chunks": [
+        {
+          "chunk_id": "BM-006-enterprise-custom-plans::p3",
+          "score": 0.032522,
+          "text_snippet": "Ticket BM-006-enterprise-custom-plans \u2014 Enterprise Subscription Migration \u2014 Custom Plans and Contracts\n\ngrate and select the UBP plan as the target |\n"
+        },
+        {
+          "chunk_id": "BM-006::p3",
+          "score": 0.032522,
+          "text_snippet": "Article BM-006 \u2014 Enterprise Subscription Migration \u2014 Custom Plans and Contracts\n\ngrate and select the UBP plan as the target |\n| e | Confirm migration"
+        },
+        {
+          "chunk_id": "BM-006::p1",
+          "score": 0.031258,
+          "text_snippet": "Article BM-006 \u2014 Enterprise Subscription Migration \u2014 Custom Plans and Contracts\n\nustom plans do not migrate automatically. Each custom plan must be re"
+        }
+      ]
+    }
+  ]
+}

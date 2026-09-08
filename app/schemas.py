@@ -142,6 +142,7 @@ class SearchRequest(BaseModel):
     top_k: int | None = Field(default=None, ge=1, le=50)
     filters: TicketFilters | None = None
     article_filters: ArticleFilters | None = None
+    strategy: Literal["dense", "hybrid", "rerank"] | None = Field(default="hybrid")
 
 
 class SearchResponse(BaseModel):
@@ -163,6 +164,7 @@ class ChatRequest(BaseModel):
     filters: TicketFilters | None = None
     article_filters: ArticleFilters | None = None
     top_k: int | None = Field(default=None, ge=1, le=50)
+    strategy: Literal["dense", "hybrid", "rerank"] | None = Field(default="hybrid")
 
 
 class ChatResponse(BaseModel):

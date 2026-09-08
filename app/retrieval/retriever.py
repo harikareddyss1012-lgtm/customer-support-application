@@ -24,16 +24,46 @@ from .vector_store import VectorStore
 
 logger = logging.getLogger(__name__)
 
+import re
+from rank_bm25 import BM25Okapi
+
 OVERFETCH_FACTOR = 3
 
 
+def _tokenize(text: str) -> list[str]:
+    return [t for t in re.findall(r"[\w\-]+", text.lower()) if t]
+
+
 class Retriever:
-    """Turns a natural-language question into a ranked list of chunks."""
+    """Turns a natural-language question into a ranked list of chunks using Dense, Hybrid BM25+RRF, or Cross-Encoder Reranking."""
 
     def __init__(self, store: VectorStore, top_k: int = 6, min_relevance: float = 0.25) -> None:
         self.store = store
         self.top_k = top_k
         self.min_relevance = min_relevance
+        self._bm25_corpus: list[dict[str, Any]] = []
+        self._bm25_index: BM25Okapi | None = None
+        self._cross_encoder = None
+        self._init_bm25()
+
+    def _init_bm25(self) -> None:
+        try:
+            self._bm25_corpus = self.store.get_all()
+            if self._bm25_corpus:
+                tokenized_corpus = [_tokenize(c["text"]) for c in self._bm25_corpus]
+                self._bm25_index = BM25Okapi(tokenized_corpus)
+        except Exception as exc:
+            logger.warning("Failed to initialize BM25 index: %s", exc)
+            self._bm25_index = None
+
+    def _get_cross_encoder(self) -> Any:
+        if self._cross_encoder is None:
+            try:
+                from sentence_transformers import CrossEncoder
+                self._cross_encoder = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
+            except Exception as exc:
+                logger.warning("Could not load sentence_transformers CrossEncoder: %s", exc)
+        return self._cross_encoder
 
     def retrieve(
         self,
@@ -42,37 +72,116 @@ class Retriever:
         filters: TicketFilters | None = None,
         article_filters: ArticleFilters | None = None,
         max_per_source: int = 2,
+        strategy: str = "hybrid",
     ) -> list[RetrievedChunk]:
-        """Retrieve the most relevant chunks for `query`."""
+        """Retrieve using `dense`, `hybrid` (BM25+RRF), or `rerank` (Cross-Encoder)."""
         limit = top_k or self.top_k
         where = _build_where(filters, article_filters)
 
-        hits = self.store.query(query, top_k=limit * OVERFETCH_FACTOR, where=where)
-        if not hits:
-            logger.info("no hits for query=%r filters=%s", query[:80], where)
-            return []
+        # ------------------------------------------------ standard dense
+        if strategy == "dense":
+            hits = self.store.query(query, top_k=limit * OVERFETCH_FACTOR, where=where)
+            if not hits:
+                return []
+            chunks = [_to_chunk(hit) for hit in hits]
+            if self.min_relevance > 0.0:
+                chunks = [c for c in chunks if c.score >= self.min_relevance]
+            return _deduplicate(chunks, max_per_source, limit)
 
-        chunks = [_to_chunk(hit) for hit in hits]
-        chunks = [c for c in chunks if c.score >= self.min_relevance]
+        # ------------------------------------------------ cross-encoder rerank
+        if strategy == "rerank":
+            candidate_limit = max(25, limit * OVERFETCH_FACTOR)
+            dense_hits = self.store.query(query, top_k=candidate_limit, where=where)
+            if not dense_hits:
+                return []
+            dense_chunks = [_to_chunk(hit) for hit in dense_hits]
 
-        # De-duplicate: first-seen wins the per-source cap
-        per_source: dict[str, int] = {}
-        selected: list[RetrievedChunk] = []
-        for chunk in chunks:
-            source_key = chunk.article_id or chunk.ticket_id
-            seen = per_source.get(source_key, 0)
-            if seen >= max_per_source:
-                continue
-            per_source[source_key] = seen + 1
-            selected.append(chunk)
-            if len(selected) >= limit:
-                break
+            cross_enc = self._get_cross_encoder()
+            if cross_enc is not None:
+                try:
+                    pairs = [(query, c.text) for c in dense_chunks]
+                    scores = cross_enc.predict(pairs)
+                    for chunk, score in zip(dense_chunks, scores):
+                        chunk.score = round(float(score), 4)
+                    dense_chunks.sort(key=lambda c: c.score, reverse=True)
+                except Exception as exc:
+                    logger.warning("CrossEncoder prediction error: %s", exc)
+            else:
+                q_tokens = set(_tokenize(query))
+                for chunk in dense_chunks:
+                    c_tokens = set(_tokenize(chunk.text))
+                    overlap = len(q_tokens.intersection(c_tokens))
+                    chunk.score = round(chunk.score + (overlap * 0.05), 4)
+                dense_chunks.sort(key=lambda c: c.score, reverse=True)
 
-        logger.info(
-            "retrieved %d/%d chunks (threshold=%.2f) for query=%r",
-            len(selected), len(hits), self.min_relevance, query[:80],
-        )
-        return selected
+            return _deduplicate(dense_chunks, max_per_source, limit)
+
+        # ------------------------------------------------ hybrid BM25 + RRF (default)
+        candidate_limit = max(25, limit * OVERFETCH_FACTOR)
+        dense_hits = self.store.query(query, top_k=candidate_limit, where=where)
+        dense_chunks = [_to_chunk(hit) for hit in dense_hits]
+
+        bm25_chunks: list[RetrievedChunk] = []
+        if self._bm25_index and self._bm25_corpus:
+            tokenized_query = _tokenize(query)
+            bm25_scores = self._bm25_index.get_scores(tokenized_query)
+            scored_corpus = []
+            for score, raw in zip(bm25_scores, self._bm25_corpus):
+                if score > 0:
+                    scored_corpus.append((score, raw))
+            scored_corpus.sort(key=lambda x: x[0], reverse=True)
+            bm25_top = scored_corpus[:candidate_limit]
+            for score, hit in bm25_top:
+                hit_dict = {
+                    "chunk_id": hit["chunk_id"],
+                    "text": hit["text"],
+                    "metadata": hit["metadata"],
+                    "score": float(score),
+                }
+                bm25_chunks.append(_to_chunk(hit_dict))
+
+        rrf_k = 60
+        rrf_scores: dict[str, float] = {}
+        chunk_map: dict[str, RetrievedChunk] = {}
+
+        for rank, chunk in enumerate(dense_chunks, start=1):
+            cid = chunk.chunk_id
+            chunk_map[cid] = chunk
+            rrf_scores[cid] = rrf_scores.get(cid, 0.0) + (1.0 / (rrf_k + rank))
+
+        for rank, chunk in enumerate(bm25_chunks, start=1):
+            cid = chunk.chunk_id
+            if cid not in chunk_map:
+                chunk_map[cid] = chunk
+            rrf_scores[cid] = rrf_scores.get(cid, 0.0) + (1.0 / (rrf_k + rank))
+
+        fused_cids = sorted(rrf_scores.keys(), key=lambda cid: rrf_scores[cid], reverse=True)
+
+        chunks = []
+        for cid in fused_cids:
+            chunk = chunk_map[cid]
+            chunk.score = round(rrf_scores[cid], 6)
+            chunks.append(chunk)
+
+        if self.min_relevance > 0.0:
+            chunks = [c for c in chunks if c.score >= self.min_relevance]
+
+        return _deduplicate(chunks, max_per_source, limit)
+
+
+def _deduplicate(chunks: list[RetrievedChunk], max_per_source: int, limit: int) -> list[RetrievedChunk]:
+    per_source: dict[str, int] = {}
+    selected: list[RetrievedChunk] = []
+    for chunk in chunks:
+        source_key = chunk.article_id or chunk.ticket_id
+        seen = per_source.get(source_key, 0)
+        if seen >= max_per_source:
+            continue
+        per_source[source_key] = seen + 1
+        selected.append(chunk)
+        if len(selected) >= limit:
+            break
+    return selected
 
     def similar_to_ticket(
         self, subject: str, body: str, top_k: int = 4, resolved_only: bool = True

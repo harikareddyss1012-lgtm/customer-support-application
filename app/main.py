@@ -81,11 +81,15 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
     )
 
 
-@app.get("/", include_in_schema=False)
-def root() -> dict[str, str]:
-    return {
-        "name": "Customer Support Tickets RAG API",
-        "version": __version__,
-        "docs": "/docs",
-        "health": "/api/health",
-    }
+from pathlib import Path
+from fastapi.responses import HTMLResponse, JSONResponse
+
+STATIC_DIR = Path(__file__).resolve().parent / "static"
+
+
+@app.get("/", response_class=HTMLResponse, include_in_schema=False)
+def root() -> HTMLResponse:
+    index_path = STATIC_DIR / "index.html"
+    if index_path.exists():
+        return HTMLResponse(content=index_path.read_text(encoding="utf-8"))
+    return HTMLResponse(content="<h1>Customer Support RAG API</h1>")

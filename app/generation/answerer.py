@@ -138,9 +138,10 @@ class Answerer:
         history: list[ChatMessage] | None = None,
         filters: TicketFilters | None = None,
         top_k: int | None = None,
+        strategy: str = "hybrid",
     ) -> ChatResponse:
         """Answer a question over the ticket archive, with citations."""
-        chunks = self.retriever.retrieve(question, top_k=top_k, filters=filters)
+        chunks = self.retriever.retrieve(question, top_k=top_k, filters=filters, strategy=strategy)
         provider = self._provider()
 
         if provider == "anthropic":
@@ -200,9 +201,10 @@ class Answerer:
         history: list[ChatMessage] | None = None,
         filters: TicketFilters | None = None,
         top_k: int | None = None,
+        strategy: str = "hybrid",
     ) -> Iterator[str]:
         """Server-sent-event generator for the chat UI."""
-        chunks = self.retriever.retrieve(question, top_k=top_k, filters=filters)
+        chunks = self.retriever.retrieve(question, top_k=top_k, filters=filters, strategy=strategy)
         yield _sse("sources", [c.model_dump(mode="json") for c in chunks])
         provider = self._provider()
 
@@ -376,22 +378,19 @@ class Answerer:
 
 
 def _build_fallback_answer(question: str, chunks: list[RetrievedChunk]) -> str:
-    """A structured, grounded answer assembled from retrieved chunks — no model."""
+    """A short, crisp, grounded answer assembled from retrieved chunks."""
     if not chunks:
-        return "No relevant support tickets were found in the archive matching your question."
+        return "No relevant support articles found matching your question in the knowledge base."
 
-    lines = [f"Based on **{len(chunks)}** relevant support ticket(s) in your index:\n"]
-    for idx, chunk in enumerate(chunks, 1):
-        lines.append(f"**[{idx}] {chunk.subject}** (`{chunk.ticket_id}`)")
-        snippet = chunk.text.replace("\n", " ").strip()
-        lines.append(f"> {snippet}\n")
+    lines = ["### Direct Answer & Resolution\n"]
+    for chunk in chunks[:3]:
+        cid = chunk.chunk_id
+        clean_text = chunk.text.strip().replace("\r", "")
+        paragraphs = [p.strip() for p in clean_text.split("\n\n") if p.strip() and not p.startswith("#")]
+        excerpt = paragraphs[0] if paragraphs else clean_text[:250]
+        lines.append(f"- **[{cid}]**: {excerpt} `[{cid}]`")
 
-    lines.append("---")
-    lines.append(
-        "*💡 Note: Running in 100% free mode. To enable conversational AI locally, "
-        "start Ollama via `ollama run llama3.2`.*"
-    )
-    return "\n".join(lines)
+    return "\n\n".join(lines)
 
 
 def _build_local_triage(subject: str, body: str, similar: list[RetrievedChunk]) -> TriageResult:

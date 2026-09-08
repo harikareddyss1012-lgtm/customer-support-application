@@ -60,6 +60,7 @@ def chat(
             history=request.history,
             filters=request.filters,
             top_k=request.top_k,
+            strategy=request.strategy or "hybrid",
         )
     except CredentialsError as exc:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
@@ -83,6 +84,7 @@ def chat_stream(
             history=request.history,
             filters=request.filters,
             top_k=request.top_k,
+            strategy=request.strategy or "hybrid",
         ),
         media_type="text/event-stream",
         headers=SSE_HEADERS,
@@ -132,6 +134,6 @@ def search(
 ) -> SearchResponse:
     """Retrieval only — no Claude call. Useful for debugging what the model sees."""
     chunks = retriever.retrieve(
-        query=request.query, top_k=request.top_k, filters=request.filters
+        query=request.query, top_k=request.top_k, filters=request.filters, strategy=request.strategy or "hybrid"
     )
     return SearchResponse(query=request.query, chunks=chunks)

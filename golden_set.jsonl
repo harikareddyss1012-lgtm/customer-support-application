@@ -1,0 +1,12 @@
+{"id": 1, "question": "What does error code ERR-4032 mean and what is the fix?", "expected_chunk_id": "BM-002::p3", "expected_article_id": "BM-002", "token_match": "ERR-4032"}
+{"id": 2, "question": "What steps fix ERR-4031 after SSO mapping breaks?", "expected_chunk_id": "BM-005::p2", "expected_article_id": "BM-005", "token_match": "ERR-4031"}
+{"id": 3, "question": "What error code is generated when a signature verification fails on a webhook endpoint after migration?", "expected_chunk_id": "BM-004::p3", "expected_article_id": "BM-004", "token_match": "ERR-4040"}
+{"id": 4, "question": "What happens when an account gets locked during data transfer with code ERR-4030?", "expected_chunk_id": "BM-005::p3", "expected_article_id": "BM-005", "token_match": "ERR-4030"}
+{"id": 5, "question": "How long do migration credits last and what happens when they expire?", "expected_chunk_id": "BM-003::p2", "expected_article_id": "BM-003", "token_match": "MIGRATION_CREDIT"}
+{"id": 6, "question": "What is the new invoice numbering format in the Unified Billing Platform?", "expected_chunk_id": "BM-001::p2", "expected_article_id": "BM-001", "token_match": "UBP-YYYY-NNNNNN"}
+{"id": 7, "question": "What authentication header replaces X-Billing-Token for API calls?", "expected_chunk_id": "BM-004::p2", "expected_article_id": "BM-004", "token_match": "X-Billing-Token"}
+{"id": 8, "question": "What permissions does the billing_admin SAML role have?", "expected_chunk_id": "BM-005::p4", "expected_article_id": "BM-005", "token_match": "billing_admin"}
+{"id": 9, "question": "When is the cutover date for Phase 3 Enterprise accounts?", "expected_chunk_id": "BM-001::p1", "expected_article_id": "BM-001", "token_match": "Phase 3"}
+{"id": 10, "question": "What formula is used to calculate MIGRATION_CREDIT on the first UBP invoice?", "expected_chunk_id": "BM-003::p2", "expected_article_id": "BM-003", "token_match": "LBE_credit_balance"}
+{"id": 11, "question": "What is the rate limit for the API token endpoint per client ID?", "expected_chunk_id": "BM-004::p4", "expected_article_id": "BM-004", "token_match": "rate-limits"}
+{"id": 12, "question": "What happens if a custom plan migration addendum is not signed 7 days before the migration date?", "expected_chunk_id": "BM-006::p4", "expected_article_id": "BM-006", "token_match": "addendum"}
